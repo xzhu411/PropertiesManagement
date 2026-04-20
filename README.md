@@ -1,18 +1,18 @@
 # Plaza Intelligence — Residential AM
 
-> AI-powered residential asset management for private equity real estate firms.
+> 🏢 AI-powered residential asset management for private equity real estate firms.
 
-
-## Demo - Click and go to Youtube page to see the full demo
+## 🎬 Demo
 
 [![Demo Video](https://img.youtube.com/vi/8_Q6q_fzPTU/0.jpg)](https://youtu.be/8_Q6q_fzPTU)
+
 | Timestamp | Section |
 |-----------|---------|
 | [0:00](https://youtu.be/8_Q6q_fzPTU?t=0) | Intro & architecture |
 | [2:44](https://youtu.be/8_Q6q_fzPTU?t=164) | Portfolio dashboard |
-| [7:27](https://youtu.be/8_Q6q_fzPTU?t=447) | Tenant screening |
+| [7:27](https://youtu.be/8_Q6q_fzPTU?t=447) | Tenant screening & FHA compliance |
 
-## What This Builds
+## 🔧 What This Builds
 
 **Two modules:**
 
@@ -34,7 +34,7 @@
 - Risk flag accordion with mitigants
 - Conditions checklist with progress tracking
 
-## What's Actually AI vs. Python
+## 🤖 What's Actually AI vs. Python
 
 | Component | What runs it |
 |---|---|
@@ -46,21 +46,12 @@
 | FHA pre-check | **Pure Python** — `fha_checker.py`, rule-based |
 | Portfolio KPIs, NOI chart, lease table | Mock data |
 
-## The Financial Model
+## 📐 The Financial Model
 
 The NPV math lives in **pure Python** (`backend/services/screening_engine.py`) — not inside Claude's prompt. Claude receives pre-computed numbers and provides contextual analysis. This is intentional: financial exposure calculations should not depend on LLM output variability.
-
-```
-P(vacancy) = base_rate × credit_factor × employment_factor × payment_factor × history_factor
-P(eviction) = base_rate × eviction_history × credit_factor × payment_factor
-
-12-mo Expected Net Revenue = Rent × 12 × (1 - P(vacancy)) - Eviction_Cost × P(eviction)
-Delta = Applicant_Revenue - Market_Average_Revenue
-```
-
 Assumptions: vacancy cost = $3,200 (1 month rent + $800 turn), eviction cost = $6,500 (legal + 2 months lost rent + turn).
 
-## The FHA Compliance Layer
+## ⚖️ The FHA Compliance Layer
 
 Two-tier approach:
 
@@ -69,7 +60,7 @@ Two-tier approach:
 
 Key scenario: A3 (Rosa Gutierrez) — Section 8 Housing Choice Voucher holder. Naive rejection of "non-traditional income" triggers a Fair Housing Act flag citing **Austin City Code § 5-11-41**. The system identifies the compliant path: evaluate combined income (wages + voucher = $5,300/mo) against the 3x rent standard.
 
-## Mock Portfolio
+## 🏘️ Mock Portfolio
 
 | Property | City | Units | NOI/yr | Cap Rate | Risk |
 |---|---|---|---|---|---|
@@ -80,7 +71,38 @@ Key scenario: A3 (Rosa Gutierrez) — Section 8 Housing Choice Voucher holder. N
 
 Portfolio: 488 units · $5.68M NOI · 4.94% blended cap rate vs. CBRE Q4 2024 multifamily benchmark 5.20%.
 
-## Stack
+## 📁 Project Structure
+
+backend/
+├── main.py                    # FastAPI app, CORS, router registration
+├── config.py                  # Settings, API key via pydantic-settings
+├── routers/
+│   ├── portfolio.py           # Portfolio endpoints + SSE draft notice
+│   ├── screening.py           # Tenant screening endpoints (full + stream)
+│   └── analytics.py          # Rent optimization
+├── services/
+│   ├── claude_service.py      # Two-call Claude architecture + risk alerts
+│   ├── screening_engine.py    # Pure Python NPV/vacancy/eviction model
+│   └── fha_checker.py        # Deterministic FHA pre-check, city ordinance dict
+└── data/
+├── mock_portfolio.py      # 4 properties, 488 units, NOI trend, lease data
+└── mock_applicants.py     # 5 preset applicant profiles
+frontend/
+├── src/app/
+│   ├── dashboard/page.tsx     # Portfolio dashboard page
+│   └── screening/page.tsx     # Tenant screening page
+├── src/components/
+│   ├── dashboard/
+│   │   ├── AIRiskFeed.tsx         # Claude-generated risk alerts
+│   │   ├── DraftNoticeModal.tsx   # SSE streaming legal notice
+│   │   └── PortfolioKPIBar.tsx    # NOI, occupancy, DSCR, collection KPIs
+│   └── screening/
+│       ├── AgentNarrative.tsx     # Call 2 — SSE streaming terminal UI
+│       ├── FHACompliancePanel.tsx # FHA flag display with legal citations
+│       ├── NPVImpactModel.tsx     # 12-month NPV table
+│       └── RiskFlagAccordion.tsx  # Risk flags with mitigants
+
+## 🛠 Stack
 
 | Layer | Tech |
 |---|---|
@@ -90,7 +112,7 @@ Portfolio: 488 units · $5.68M NOI · 4.94% blended cap rate vs. CBRE Q4 2024 mu
 | Charts | Recharts |
 | Data | Realistic US rental market mock data |
 
-## Setup
+## 🚀 Setup
 
 ### Prerequisites
 - Python 3.10+
@@ -122,9 +144,7 @@ npm run dev
 
 App at `http://localhost:3000`
 
-## Key Endpoints
-
-```
+## 📡 Key Endpoints
 GET  /api/portfolio/summary               → Portfolio KPIs
 GET  /api/portfolio/properties            → All 4 properties
 GET  /api/portfolio/noi-trend             → 12-month NOI series
@@ -135,9 +155,8 @@ POST /api/portfolio/draft-notice          → SSE stream — legal notice from a
 GET  /api/applicants/presets              → 5 demo applicant profiles
 POST /api/screen-tenant/full              → Structured JSON underwriting
 POST /api/screen-tenant/stream            → SSE streaming narrative
-```
 
-## Demo Flow
+## 🗺 Demo Flow
 
 1. **Dashboard** — 488 units, $5.68M NOI. Note Riverside Commons DSCR alert (1.24x, below 1.25x covenant)
 2. **Draft Notice** — click the Riverside DSCR alert → expand → "Draft Notice" → watch Claude stream a legally compliant Texas notice in real time
