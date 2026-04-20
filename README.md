@@ -1,8 +1,7 @@
-# Plaza Intelligence — Residential AM
+# Residential AM
 
 > AI-powered residential asset management for private equity real estate firms.
 
-A take-home project demonstrating how Plaza.ai's institutional intelligence platform can expand into residential property management — a vertical adjacent to their core CRE product.
 
 ## What This Builds
 
@@ -116,9 +115,4 @@ POST /api/screen-tenant/full         → Structured JSON underwriting result
 POST /api/screen-tenant/stream       → SSE streaming narrative
 ```
 
-## Demo Flow (for video)
 
-1. **Dashboard** — Show portfolio KPIs, highlight Riverside Commons (91.2% collection flagged), Sunset Ridge (89.5% occupancy below floor). Click rent optimization to show EV math.
-2. **Screening — Sarah Chen (A1)** — Baseline approved applicant. Show how both panels populate simultaneously (structured JSON instant, narrative streams).
-3. **Screening — Rosa Gutierrez (A3)** — The FHA demo. Select her profile, analyze. Watch the FHA compliance panel light red. Explain the Austin source-of-income ordinance catch. Show the NPV delta.
-4. **Architecture callout** — "The vacancy probability formula lives in Python, not in Claude's prompt. You don't want your financial model to depend on whether the LLM is in a good mood."
