@@ -1,5 +1,6 @@
 from fastapi import APIRouter
-from data.mock_portfolio import PROPERTIES, PORTFOLIO_SUMMARY, NOI_TREND, LEASE_EXPIRATIONS, AI_RISK_ALERTS, LEASE_EXPIRY_DISTRIBUTION
+from data.mock_portfolio import PROPERTIES, PORTFOLIO_SUMMARY, NOI_TREND, LEASE_EXPIRATIONS, LEASE_EXPIRY_DISTRIBUTION
+from services import claude_service
 
 router = APIRouter()
 
@@ -39,4 +40,4 @@ def get_lease_expiry_distribution():
 
 @router.get("/portfolio/risk-alerts")
 def get_risk_alerts():
-    return AI_RISK_ALERTS
+    return claude_service.generate_risk_alerts(PROPERTIES, LEASE_EXPIRATIONS)

@@ -294,7 +294,9 @@ LEASE_EXPIRY_DISTRIBUTION = {
     ],
 }
 
-AI_RISK_ALERTS = [
+# AI_RISK_ALERTS removed — now generated in real-time by Claude via claude_service.generate_risk_alerts()
+
+_REMOVED = [
     {
         "level": "URGENT",
         "property": "Oakwood Apartments",
@@ -375,4 +377,4 @@ AI_RISK_ALERTS = [
             {"label": "Rent optimization model", "href": "#rent-optimization"},
         ],
     },
-]
+]  # end _REMOVED (kept for reference only, not used)

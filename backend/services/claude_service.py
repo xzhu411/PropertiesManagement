@@ -182,6 +182,155 @@ def run_structured_screening(application: dict, property_name: str, city: str, n
     return json.loads(raw)
 
 
+_risk_alerts_cache: list | None = None
+
+SYSTEM_RISK_ALERTS = """You are a residential asset management analyst for a private equity real estate firm.
+Analyze the portfolio data and generate risk alerts as a JSON array.
+
+You MUST respond with ONLY a valid JSON array. No prose, no markdown fences, no explanation outside the array.
+
+Each alert object must match this schema exactly:
+{
+  "level": "URGENT" | "WATCH" | "INFO",
+  "property": "exact property name string",
+  "unit": "unit id string or null for property-level alerts",
+  "message": "one concise sentence, max 120 chars",
+  "action": "one recommended action, max 60 chars",
+  "analysis": "2-4 sentences with specific numbers from the data"
+}
+
+Level definitions:
+- URGENT: immediate financial or legal risk requiring action now
+- WATCH: developing risk to monitor in next 30 days
+- INFO: opportunity or low-priority observation
+
+Generate 5-8 alerts total. Be specific — use actual numbers from the data."""
+
+
+def generate_risk_alerts(properties: list, leases: list) -> list:
+    """Generate AI risk alerts from portfolio data. Result cached in memory for the session."""
+    global _risk_alerts_cache
+    if _risk_alerts_cache is not None:
+        return _risk_alerts_cache
+
+    # Build concise property summaries
+    prop_summaries = [
+        {
+            "name": p["name"],
+            "city": p["city"],
+            "units": p["units"],
+            "occupancy_pct": p["financials"]["physical_occupancy_pct"],
+            "collection_rate_pct": p["financials"]["collection_rate_pct"],
+            "noi_annual": p["financials"]["noi_annual"],
+            "cap_rate": p["financials"]["cap_rate"],
+            "dscr": p["debt"]["dscr"],
+            "loan_balance": p["debt"]["loan_balance"],
+            "annual_debt_service": p["debt"]["annual_debt_service"],
+            "interest_rate_pct": p["debt"]["interest_rate_pct"],
+            "maturity_date": p["debt"]["maturity_date"],
+            "lease_expirations_90d": p["lease_expirations_90d"],
+            "rent_vs_market_pct": p["rent_vs_market_pct"],
+        }
+        for p in properties
+    ]
+
+    # Only pass critical/high urgency leases to keep prompt concise
+    urgent_leases = [
+        {
+            "unit": l["unit"],
+            "property": l["property"],
+            "tenant": l["tenant"],
+            "rent": l["rent"],
+            "expires": l["expires"],
+            "days_until": l["days_until"],
+            "renewal_status": l["renewal_status"],
+        }
+        for l in leases if l["urgency"] in ("CRITICAL", "HIGH")
+    ]
+
+    prompt = f"""Analyze this residential portfolio and generate risk alerts.
+
+PROPERTIES:
+{json.dumps(prop_summaries, indent=2)}
+
+CRITICAL/HIGH URGENCY LEASES:
+{json.dumps(urgent_leases, indent=2)}
+
+Generate a JSON array of 5-8 risk alerts covering the most important risks and opportunities."""
+
+    response = client.messages.create(
+        model=settings.model,
+        max_tokens=2000,
+        system=SYSTEM_RISK_ALERTS,
+        messages=[{"role": "user", "content": prompt}],
+    )
+
+    raw = response.content[0].text.strip()
+    if raw.startswith("```"):
+        raw = raw.split("```")[1]
+        if raw.startswith("json"):
+            raw = raw[4:]
+    raw = raw.strip()
+
+    _risk_alerts_cache = json.loads(raw)
+    return _risk_alerts_cache
+
+
+SYSTEM_DRAFT_NOTICE = """You are a property management notice drafting assistant for an institutional PE real estate firm.
+Draft formal, legally appropriate notices ready to print and send.
+Use plain text only — no markdown, no bullet symbols, no asterisks.
+Include specific legal citations relevant to the property's state and city."""
+
+
+def stream_draft_notice(alert: dict):
+    """Stream a legal notice draft based on a risk alert."""
+    from data.mock_portfolio import PROPERTIES
+
+    property_name = alert.get("property", "")
+    unit = alert.get("unit")
+    message = alert.get("message", "")
+    action = alert.get("action", "")
+    analysis = alert.get("analysis", "")
+    level = alert.get("level", "")
+
+    city = "Unknown"
+    for p in PROPERTIES:
+        if p["name"] == property_name:
+            city = p["city"]
+            break
+
+    unit_line = f"Unit: {unit}" if unit else "Property-level notice"
+    prompt = f"""Draft a formal property management notice for the following situation.
+
+Property: {property_name} ({city})
+{unit_line}
+Alert Level: {level}
+Issue: {message}
+Required Action: {action}
+Context: {analysis or "N/A"}
+
+Write a formal notice with:
+- Date: April 19, 2025
+- Property address and unit (if applicable)
+- Salutation: "Dear Resident" (or unit-specific if unit is provided)
+- Clear statement of the issue with specific figures
+- Exact action required and firm deadline
+- Applicable legal citation for the jurisdiction (e.g., Texas Property Code §91.001 for Texas, NYC Admin Code for New York)
+- Professional closing from "Plaza Property Management"
+
+Plain text only. Ready to print and send."""
+
+    with client.messages.stream(
+        model=settings.model,
+        max_tokens=800,
+        system=SYSTEM_DRAFT_NOTICE,
+        messages=[{"role": "user", "content": prompt}],
+    ) as stream:
+        for text in stream.text_stream:
+            yield f"data: {json.dumps({'chunk': text})}\n\n"
+    yield "data: [DONE]\n\n"
+
+
 def stream_narrative(application: dict, result: dict, property_name: str):
     """Call 2: SSE streaming narrative. Returns a generator of SSE-formatted strings."""
     prompt = _build_narrative_prompt(application, result, property_name)

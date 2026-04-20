@@ -19,5 +19,8 @@ out/
 # Claude Code local config
 .claude/
 
+# Office temp files
+~$*
+
 # OS
 .DS_Store
