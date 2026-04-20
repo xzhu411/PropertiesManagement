@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { RiskAlert } from "@/lib/types";
-import { AlertTriangle, Eye, Info, ChevronDown, ChevronUp, ExternalLink } from "lucide-react";
+import { AlertTriangle, Eye, Info, ChevronDown, ChevronUp, ExternalLink, FileText } from "lucide-react";
+import DraftNoticeModal from "./DraftNoticeModal";
 
 const levelConfig = {
   URGENT: { icon: AlertTriangle, color: "text-red-400", bg: "bg-red-500/10", border: "border-red-500/20", borderExpanded: "border-red-500/40", prefix: "[URGENT]" },
@@ -12,6 +13,7 @@ const levelConfig = {
 
 export default function AIRiskFeed({ alerts }: { alerts: RiskAlert[] }) {
   const [expanded, setExpanded] = useState<number | null>(null);
+  const [draftAlert, setDraftAlert] = useState<RiskAlert | null>(null);
 
   return (
     <div className="bg-[#13161f] border border-white/[0.07] rounded-xl p-5">
@@ -55,27 +57,36 @@ export default function AIRiskFeed({ alerts }: { alerts: RiskAlert[] }) {
               {isOpen && alert.analysis && (
                 <div className="px-3 pb-3 border-t border-white/[0.07] mt-0">
                   <p className="text-slate-400 leading-relaxed pt-3 pb-2">{alert.analysis}</p>
-                  {alert.action_links && alert.action_links.length > 0 && (
-                    <div className="flex flex-wrap gap-2 pt-1">
-                      {alert.action_links.map((link, j) => (
-                        <a
-                          key={j}
-                          href={link.href}
-                          className={`inline-flex items-center gap-1 px-2.5 py-1 rounded border ${cfg.border} ${cfg.color} text-[10px] hover:opacity-80 transition-opacity`}
-                          onClick={e => e.stopPropagation()}
-                        >
-                          {link.label}
-                          <ExternalLink size={9} />
-                        </a>
-                      ))}
-                    </div>
-                  )}
+                  <div className="flex flex-wrap gap-2 pt-1">
+                    {alert.level !== "INFO" && (
+                      <button
+                        onClick={e => { e.stopPropagation(); setDraftAlert(alert); }}
+                        className={`inline-flex items-center gap-1 px-2.5 py-1 rounded border ${cfg.border} ${cfg.color} text-[10px] hover:opacity-80 transition-opacity`}
+                      >
+                        <FileText size={9} />
+                        Draft Notice
+                      </button>
+                    )}
+                    {alert.action_links && alert.action_links.map((link, j) => (
+                      <a
+                        key={j}
+                        href={link.href}
+                        className={`inline-flex items-center gap-1 px-2.5 py-1 rounded border ${cfg.border} ${cfg.color} text-[10px] hover:opacity-80 transition-opacity`}
+                        onClick={e => e.stopPropagation()}
+                      >
+                        {link.label}
+                        <ExternalLink size={9} />
+                      </a>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
           );
         })}
       </div>
+
+      <DraftNoticeModal alert={draftAlert} onClose={() => setDraftAlert(null)} />
     </div>
   );
 }
