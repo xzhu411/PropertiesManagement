@@ -2,6 +2,16 @@
 
 > AI-powered residential asset management for private equity real estate firms.
 
+
+## Demo
+
+[![Demo Video](https://img.youtube.com/vi/8_Q6q_fzPTU/0.jpg)](https://youtu.be/8_Q6q_fzPTU)
+| Timestamp | Section |
+|-----------|---------|
+| [0:00](https://youtu.be/8_Q6q_fzPTU?t=0) | Intro & architecture |
+| [2:44](https://youtu.be/8_Q6q_fzPTU?t=164) | Portfolio dashboard |
+| [7:27](https://youtu.be/8_Q6q_fzPTU?t=447) | Tenant screening |
+
 ## What This Builds
 
 **Two modules:**
