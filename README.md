@@ -1,8 +1,7 @@
-# Plaza Intelligence — Residential AM
+# Residential AM
 
 > AI-powered residential asset management for private equity real estate firms.
 
-A take-home project demonstrating how Plaza.ai's institutional intelligence platform can expand into residential property management — a vertical adjacent to their core CRE product.
 
 ## What This Builds
 
