@@ -1,8 +1,8 @@
-# Plaza Intelligence — Residential AM
+# AI-Powered Residential AM Tool
 
 > 🏢 AI-powered residential asset management for private equity real estate firms.
 
-## 🎬 Demo
+## 🎬 Demo (click the image and watch the full demo!)
 
 [![Demo Video](https://img.youtube.com/vi/8_Q6q_fzPTU/0.jpg)](https://youtu.be/8_Q6q_fzPTU)
 
