@@ -3,7 +3,7 @@
 > AI-powered residential asset management for private equity real estate firms.
 
 
-## Demo
+## Demo - Click and go to Youtube page to see the full demo
 
 [![Demo Video](https://img.youtube.com/vi/8_Q6q_fzPTU/0.jpg)](https://youtu.be/8_Q6q_fzPTU)
 | Timestamp | Section |
