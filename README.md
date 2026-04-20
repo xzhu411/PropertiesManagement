@@ -10,7 +10,7 @@
 |-----------|---------|
 | [0:00](https://youtu.be/8_Q6q_fzPTU?t=0) | Intro & architecture |
 | [2:44](https://youtu.be/8_Q6q_fzPTU?t=164) | Portfolio dashboard |
-| [7:27](https://youtu.be/8_Q6q_fzPTU?t=447) | Tenant screening & FHA compliance |
+| [7:27](https://youtu.be/8_Q6q_fzPTU?t=447) | Tenant screening |
 
 ## 🔧 What This Builds
 
