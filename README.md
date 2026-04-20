@@ -73,6 +73,7 @@ Portfolio: 488 units · $5.68M NOI · 4.94% blended cap rate vs. CBRE Q4 2024 mu
 
 ## 📁 Project Structure
 
+```
 backend/
 ├── main.py                    # FastAPI app, CORS, router registration
 ├── config.py                  # Settings, API key via pydantic-settings
@@ -101,6 +102,7 @@ frontend/
 │       ├── FHACompliancePanel.tsx # FHA flag display with legal citations
 │       ├── NPVImpactModel.tsx     # 12-month NPV table
 │       └── RiskFlagAccordion.tsx  # Risk flags with mitigants
+```
 
 ## 🛠 Stack
 
@@ -145,6 +147,8 @@ npm run dev
 App at `http://localhost:3000`
 
 ## 📡 Key Endpoints
+
+```
 GET  /api/portfolio/summary               → Portfolio KPIs
 GET  /api/portfolio/properties            → All 4 properties
 GET  /api/portfolio/noi-trend             → 12-month NOI series
@@ -155,10 +159,5 @@ POST /api/portfolio/draft-notice          → SSE stream — legal notice from a
 GET  /api/applicants/presets              → 5 demo applicant profiles
 POST /api/screen-tenant/full              → Structured JSON underwriting
 POST /api/screen-tenant/stream            → SSE streaming narrative
+```
 
-## 🗺 Demo Flow
-
-1. **Dashboard** — 488 units, $5.68M NOI. Note Riverside Commons DSCR alert (1.24x, below 1.25x covenant)
-2. **Draft Notice** — click the Riverside DSCR alert → expand → "Draft Notice" → watch Claude stream a legally compliant Texas notice in real time
-3. **Screening: Sarah Chen** — APPROVED baseline. Watch structured panels populate while narrative streams simultaneously
-4. **FHA Moment: Rosa Gutierrez** — Section 8 applicant. Watch FHA compliance panel fire. "Rejection on voucher status = FHA violation in Austin, TX."
