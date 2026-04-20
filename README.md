@@ -1,32 +1,44 @@
-# Residential AM
+# Plaza Intelligence — Residential AM
 
 > AI-powered residential asset management for private equity real estate firms.
-
 
 ## What This Builds
 
 **Two modules:**
 
 ### 1. Portfolio Dashboard (`/dashboard`)
-- Real-time KPIs: NOI, occupancy, rent collection, lease expirations
+- Real-time KPIs: NOI, occupancy, rent collection, DSCR, lease expirations
 - 12-month NOI trend vs. budget (Recharts)
-- Property cards with AI risk scores and cap rate vs. CRE benchmark
-- Lease expiry heat map with urgency flagging
-- AI Risk Feed — terminal-style scrolling alerts
-- Rent Optimization Panel — expected value math, not just "raise rent X%"
+- Property cards with DSCR badges, LTV, cap rate vs. benchmark
+- Lease Rollover Concentration — 30/60/90d toggle with weekly/15-day/monthly buckets
+- **AI Risk Feed** — Claude analyzes live portfolio data (occupancy, DSCR, collection rates, lease urgency) and generates risk alerts in real time. Cached in memory after first load.
+- **Draft Notice Agent** — click any URGENT/WATCH alert to stream a legally compliant tenant notice (city-specific citations: Texas Property Code §91.001, Austin City Code, NYC Admin Code)
+- Rent Optimization Panel — expected value math per unit type, not just "raise rent X%"
 
 ### 2. Tenant Screening (`/screening`)
 - 5 preset applicant profiles covering every screening scenario
-- **Two-call Claude architecture**: structured JSON → streaming narrative (matches Plaza's existing agent UX)
+- **Two-call Claude architecture**: structured JSON → streaming narrative
 - Income-to-rent ratio gauge (3x institutional standard)
 - **FHA Compliance Layer**: rule-based pre-check + Claude contextual analysis for Fair Housing Act exposure
 - **12-Month NPV Impact Model**: vacancy probability × cost + eviction probability × cost vs. market average
 - Risk flag accordion with mitigants
-- Streaming terminal narrative styled like Plaza's plaza-agent interface
+- Conditions checklist with progress tracking
+
+## What's Actually AI vs. Python
+
+| Component | What runs it |
+|---|---|
+| AI Risk Feed alerts | **Claude** — analyzes portfolio data on first load, cached |
+| Draft Notice text | **Claude** — streams a city-specific legal notice |
+| Screening recommendation + risk flags | **Claude** — structured JSON (Call 1) |
+| Screening narrative | **Claude** — SSE streaming (Call 2) |
+| NPV / vacancy / eviction model | **Pure Python** — `screening_engine.py`, deterministic |
+| FHA pre-check | **Pure Python** — `fha_checker.py`, rule-based |
+| Portfolio KPIs, NOI chart, lease table | Mock data |
 
 ## The Financial Model
 
-The NPV math lives in **pure Python** (`backend/services/screening_engine.py`) — not inside Claude's prompt. Claude receives pre-computed numbers and provides contextual analysis. This is intentional: you don't want financial exposure calculations to depend on LLM output variability.
+The NPV math lives in **pure Python** (`backend/services/screening_engine.py`) — not inside Claude's prompt. Claude receives pre-computed numbers and provides contextual analysis. This is intentional: financial exposure calculations should not depend on LLM output variability.
 
 ```
 P(vacancy) = base_rate × credit_factor × employment_factor × payment_factor × history_factor
@@ -36,36 +48,36 @@ P(eviction) = base_rate × eviction_history × credit_factor × payment_factor
 Delta = Applicant_Revenue - Market_Average_Revenue
 ```
 
-Assumptions: vacancy cost = $3,200 (1 month rent + $800 turn), eviction cost = $6,500 (legal + 2 months lost rent + turn), discount rate = 7.5%.
+Assumptions: vacancy cost = $3,200 (1 month rent + $800 turn), eviction cost = $6,500 (legal + 2 months lost rent + turn).
 
 ## The FHA Compliance Layer
 
-Two-tier approach mirroring regulated-industry software:
+Two-tier approach:
 
-1. **Rule-based pre-check** (`fha_checker.py`): deterministic, auditable, checks for Section 8/HCV income, disability accommodation signals, familial status, national origin
+1. **Rule-based pre-check** (`fha_checker.py`): deterministic, checks for Section 8/HCV income, disability accommodation signals, familial status, national origin
 2. **Claude contextual analysis**: receives pre-check flags as context, validates and adds narrative guidance
 
-Key scenario: A3 (Rosa Gutierrez) — applicant with Section 8 Housing Choice Voucher. Naive rejection of "non-traditional income" triggers a Fair Housing Act compliance flag citing **Austin City Code § 5-11-41** (source-of-income anti-discrimination ordinance). The system identifies the compliant alternative: evaluate total combined income (wages + voucher subsidy = $5,300/mo) against the 3x rent standard.
+Key scenario: A3 (Rosa Gutierrez) — Section 8 Housing Choice Voucher holder. Naive rejection of "non-traditional income" triggers a Fair Housing Act flag citing **Austin City Code § 5-11-41**. The system identifies the compliant path: evaluate combined income (wages + voucher = $5,300/mo) against the 3x rent standard.
 
 ## Mock Portfolio
 
 | Property | City | Units | NOI/yr | Cap Rate | Risk |
 |---|---|---|---|---|---|
 | Oakwood Apartments | Chicago, IL | 84 | $991K | 5.90% | WATCH |
-| Riverside Commons | Austin, TX | 156 | $1.83M | 4.76% | HIGH (collection 91.2%) |
+| Riverside Commons | Austin, TX | 156 | $1.83M | 4.76% | HIGH — collection 91.2%, DSCR 1.24x |
 | Lincoln Park Tower | New York, NY | 48 | $1.22M | 4.21% | STABLE |
-| Sunset Ridge | Phoenix, AZ | 200 | $1.65M | 5.31% | HIGH (occupancy 89.5%) |
+| Sunset Ridge | Phoenix, AZ | 200 | $1.65M | 5.31% | HIGH — occupancy 89.5% |
 
-Portfolio: 488 units · $5.68M NOI · 4.94% blended cap rate vs. CBRE Q4 2024 multifamily benchmark of 5.20%.
+Portfolio: 488 units · $5.68M NOI · 4.94% blended cap rate vs. CBRE Q4 2024 multifamily benchmark 5.20%.
 
 ## Stack
 
 | Layer | Tech |
 |---|---|
-| Backend | FastAPI + Pydantic + Anthropic Python SDK |
-| AI | Claude claude-sonnet-4-6 (two-call: JSON + SSE streaming) |
-| Frontend | Next.js 16 + TypeScript + Tailwind CSS |
-| UI | shadcn/ui (dark theme) + Recharts |
+| Backend | FastAPI + Pydantic v2 + Anthropic Python SDK |
+| AI | Claude claude-sonnet-4-6 — risk alerts, draft notices, screening (2-call) |
+| Frontend | Next.js 14 + TypeScript + Tailwind CSS |
+| Charts | Recharts |
 | Data | Realistic US rental market mock data |
 
 ## Setup
@@ -83,13 +95,12 @@ python -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
 
-# Set your API key in .env
 echo "ANTHROPIC_API_KEY=sk-ant-..." > .env
 
 uvicorn main:app --reload --port 8000
 ```
 
-API available at `http://localhost:8000`. Docs at `http://localhost:8000/docs`.
+API at `http://localhost:8000` · Docs at `http://localhost:8000/docs`
 
 ### Frontend
 
@@ -99,20 +110,26 @@ npm install
 npm run dev
 ```
 
-App available at `http://localhost:3000`.
+App at `http://localhost:3000`
 
 ## Key Endpoints
 
 ```
-GET  /api/portfolio/summary          → Portfolio KPIs
-GET  /api/portfolio/properties       → All properties
-GET  /api/portfolio/noi-trend        → 12-month NOI series
-GET  /api/portfolio/lease-expiry     → Upcoming expirations
-GET  /api/portfolio/risk-alerts      → AI risk feed
-GET  /api/analytics/rent-optimization → EV-based rent suggestions
-GET  /api/applicants/presets         → 5 demo applicant profiles
-POST /api/screen-tenant/full         → Structured JSON underwriting result
-POST /api/screen-tenant/stream       → SSE streaming narrative
+GET  /api/portfolio/summary               → Portfolio KPIs
+GET  /api/portfolio/properties            → All 4 properties
+GET  /api/portfolio/noi-trend             → 12-month NOI series
+GET  /api/portfolio/lease-expiry          → Upcoming expirations
+GET  /api/portfolio/risk-alerts           → Claude-generated risk alerts (cached)
+GET  /api/analytics/rent-optimization     → EV-based rent suggestions
+POST /api/portfolio/draft-notice          → SSE stream — legal notice from alert
+GET  /api/applicants/presets              → 5 demo applicant profiles
+POST /api/screen-tenant/full              → Structured JSON underwriting
+POST /api/screen-tenant/stream            → SSE streaming narrative
 ```
 
+## Demo Flow
 
+1. **Dashboard** — 488 units, $5.68M NOI. Note Riverside Commons DSCR alert (1.24x, below 1.25x covenant)
+2. **Draft Notice** — click the Riverside DSCR alert → expand → "Draft Notice" → watch Claude stream a legally compliant Texas notice in real time
+3. **Screening: Sarah Chen** — APPROVED baseline. Watch structured panels populate while narrative streams simultaneously
+4. **FHA Moment: Rosa Gutierrez** — Section 8 applicant. Watch FHA compliance panel fire. "Rejection on voucher status = FHA violation in Austin, TX."
